@@ -1,0 +1,44 @@
+[project]
+name = "docparser"
+version = "0.1.0"
+description = "Universal document parser — converts PDF, DOCX, XLSX, CSV to Markdown strings for AI pipelines"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["pdf", "docx", "xlsx", "csv", "markdown", "parser", "ai", "llm", "rag"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pdfplumber>=0.7",
+    "python-docx>=1.2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov"]
+
+[project.urls]
+Homepage = "https://github.com/satadeep3927/docparser"
+Repository = "https://github.com/satadeep3927/docparser"
+Issues = "https://github.com/satadeep3927/docparser/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["docparser"]
+
+[tool.hatch.build.targets.sdist]
+include = ["docparser/", "README.md", "LICENSE"]
