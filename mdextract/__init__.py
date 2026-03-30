@@ -1,5 +1,5 @@
 """
-docparser — Universal document-to-Markdown library
+mdextract — Universal document-to-Markdown library
 ====================================================
 Converts PDF, DOCX, XLSX, and CSV files into clean Markdown strings
 suitable for injection into AI pipelines (RAG, LLM context, embeddings, etc.).
@@ -8,20 +8,20 @@ Quickstart
 ----------
 Functional API (recommended for pipelines)::
 
-    import docparser
+    import mdextract
 
-    text = docparser.parse_file("report.pdf")          # → str
-    text = docparser.parse_file("data.xlsx")           # → str
-    text = docparser.parse_file("table.csv")           # → str
-    text = docparser.parse_file("document.docx")       # → str
+    text = mdextract.parse_file("report.pdf")          # → str
+    text = mdextract.parse_file("data.xlsx")           # → str
+    text = mdextract.parse_file("table.csv")           # → str
+    text = mdextract.parse_file("document.docx")       # → str
 
 Per-format helpers::
 
-    from docparser import parse_pdf, parse_docx, parse_csv, parse_xlsx
+    from mdextract import parse_pdf, parse_docx, parse_csv, parse_xlsx
 
 Class API (useful when you need state / reuse)::
 
-    from docparser import DocParser
+    from mdextract import DocParser
     parser = DocParser()
     text = parser.parse_file("report.pdf")
 """
@@ -58,10 +58,10 @@ def parse_file(file_path: str) -> str:
 
     Example::
 
-        import docparser
+        import mdextract
 
         # Plug straight into an LLM call
-        context = docparser.parse_file("quarterly_report.pdf")
+        context = mdextract.parse_file("quarterly_report.pdf")
         response = llm.chat(f"Summarise this document:\\n\\n{context}")
     """
     return DocParser().parse_file(file_path)

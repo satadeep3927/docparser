@@ -1,13 +1,13 @@
-# docparser
+# mdextract
 
 **Universal document → Markdown parser for AI pipelines.**
 
 Converts PDF, DOCX, XLSX, and CSV files into clean Markdown strings with a single function call. Designed to be the extraction layer in RAG systems, LLM pipelines, and document processing workflows.
 
 ```python
-import docparser
+import mdextract
 
-text = docparser.parse_file("quarterly_report.pdf")
+text = mdextract.parse_file("quarterly_report.pdf")
 response = llm.chat(f"Summarise this:\n\n{text}")
 ```
 
@@ -32,13 +32,13 @@ response = llm.chat(f"Summarise this:\n\n{text}")
 ## Installation
 
 ```bash
-pip install docparser
+pip install mdextract
 ```
 
 Or with [uv](https://github.com/astral-sh/uv):
 
 ```bash
-uv add docparser
+uv add mdextract
 ```
 
 ---
@@ -48,19 +48,19 @@ uv add docparser
 ### Functional API (recommended)
 
 ```python
-import docparser
+import mdextract
 
 # Any supported format — auto-detected from extension
-text: str = docparser.parse_file("report.pdf")
-text: str = docparser.parse_file("data.xlsx")
-text: str = docparser.parse_file("table.csv")
-text: str = docparser.parse_file("document.docx")
+text: str = mdextract.parse_file("report.pdf")
+text: str = mdextract.parse_file("data.xlsx")
+text: str = mdextract.parse_file("table.csv")
+text: str = mdextract.parse_file("document.docx")
 ```
 
 ### Per-format helpers
 
 ```python
-from docparser import parse_pdf, parse_docx, parse_csv, parse_xlsx
+from mdextract import parse_pdf, parse_docx, parse_csv, parse_xlsx
 
 text = parse_pdf("report.pdf")
 text = parse_docx("contract.docx")
@@ -73,9 +73,9 @@ text = parse_xlsx("financials.xlsx")
 Useful when you want to reuse an instance or save output to disk:
 
 ```python
-from docparser import DocParser
+from mdextract import mdextract
 
-parser = DocParser()
+parser = mdextract()
 
 # Returns Markdown string
 text = parser.parse_file("report.pdf")
@@ -95,12 +95,12 @@ print(parser.supported_extensions)
 ### RAG (Retrieval-Augmented Generation)
 
 ```python
-import docparser
+import mdextract
 from your_vectorstore import embed_and_store
 
 for file in Path("docs/").glob("**/*"):
     try:
-        markdown = docparser.parse_file(str(file))
+        markdown = mdextract.parse_file(str(file))
         embed_and_store(source=str(file), content=markdown)
     except ValueError:
         pass  # unsupported format, skip
@@ -109,10 +109,10 @@ for file in Path("docs/").glob("**/*"):
 ### LLM document Q&A
 
 ```python
-import docparser
+import mdextract
 import openai
 
-context = docparser.parse_file("annual_report.pdf")
+context = mdextract.parse_file("annual_report.pdf")
 
 response = openai.chat.completions.create(
     model="gpt-4o",
@@ -126,13 +126,13 @@ response = openai.chat.completions.create(
 ### Batch processing
 
 ```python
-import docparser
+import mdextract
 from pathlib import Path
 
 results = {}
 for path in Path("uploads/").iterdir():
     try:
-        results[path.name] = docparser.parse_file(str(path))
+        results[path.name] = mdextract.parse_file(str(path))
     except (ValueError, FileNotFoundError) as e:
         results[path.name] = f"Error: {e}"
 ```
@@ -168,10 +168,10 @@ for path in Path("uploads/").iterdir():
 ## Error Handling
 
 ```python
-import docparser
+import mdextract
 
 try:
-    text = docparser.parse_file("report.pdf")
+    text = mdextract.parse_file("report.pdf")
 except FileNotFoundError:
     print("File does not exist")
 except ValueError as e:
@@ -194,3 +194,4 @@ CSV parsing uses the Python standard library only.
 ## License
 
 [MIT](LICENSE)
+
