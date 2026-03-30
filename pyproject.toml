@@ -1,5 +1,5 @@
 [project]
-name = "docparser"
+name = "doc2md"
 version = "0.1.0"
 description = "Universal document parser — converts PDF, DOCX, XLSX, CSV to Markdown strings for AI pipelines"
 readme = "README.md"
