@@ -36,13 +36,29 @@ class DocParser:
 
     # ------------------------------------------------------------------
 
-    def parse_file(self, file_path: str, output: str | None = None) -> str:
+    def parse_file(
+        self,
+        file_path: str,
+        output: str | None = None,
+        ocr_lang: str = "eng",
+        tessdata_dir: str | None = None,
+    ) -> str:
         """Parse *file_path* and return the Markdown string.
 
         Args:
-            file_path: Path to the input document.
-            output:    Optional path to write the Markdown to.
-                       If omitted the Markdown is only returned, not saved.
+            file_path:    Path to the input document.
+            output:       Optional path to write the Markdown to.
+                          If omitted the Markdown is only returned, not saved.
+            ocr_lang:     Tesseract language code(s) used when a PDF page has no
+                          embedded text (scanned page).
+                          Single:   ``"fra"`` (French), ``"eng"`` (English)
+                          Combined: ``"eng+fra"`` (English + French)
+                          Defaults to ``"eng"``.
+            tessdata_dir: Path to a custom tessdata directory containing
+                          ``.traineddata`` files, e.g.
+                          ``r"C:\\Program Files\\Tesseract-OCR\\tessdata_best"``.
+                          When ``None`` (default) Tesseract uses its built-in
+                          standard models.
 
         Returns:
             The parsed Markdown string.
@@ -64,7 +80,13 @@ class DocParser:
                 f"Unsupported file type '{ext}'. Supported: {supported}"
             )
 
-        markdown = parser_fn(str(path))
+        kwargs = {}
+        if ext == ".pdf":
+            kwargs["ocr_lang"] = ocr_lang
+            if tessdata_dir is not None:
+                kwargs["tessdata_dir"] = tessdata_dir
+
+        markdown = parser_fn(str(path), **kwargs)
 
         if output:
             out_path = Path(output)

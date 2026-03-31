@@ -25,6 +25,7 @@ response = llm.chat(f"Summarise this:\n\n{text}")
 - **Zero configuration** — just point it at a file
 - **Returns a string** — no temp files, no disk I/O required
 - **Layout-aware for PDFs** — tables are detected and rendered separately from body text; headings are inferred from font size
+- **Scanned PDF / OCR support** — image-only pages are automatically processed with [Tesseract](https://github.com/tesseract-ocr/tesseract); supports any language and `tessdata_best` high-accuracy models
 - **AI-pipeline friendly** — output is plain UTF-8 Markdown, ready for chunking, embedding, or prompt injection
 
 ---
@@ -55,6 +56,13 @@ text: str = mdextract.parse_file("report.pdf")
 text: str = mdextract.parse_file("data.xlsx")
 text: str = mdextract.parse_file("table.csv")
 text: str = mdextract.parse_file("document.docx")
+
+# Scanned / image-only PDF — French
+text: str = mdextract.parse_file("rapport.pdf", ocr_lang="fra")
+
+# Scanned PDF — French + English mixed, using high-accuracy models
+BEST = r"C:\Program Files\Tesseract-OCR\tessdata_best"
+text: str = mdextract.parse_file("rapport.pdf", ocr_lang="fra", tessdata_dir=BEST)
 ```
 
 ### Per-format helpers
@@ -146,6 +154,30 @@ for path in Path("uploads/").iterdir():
 - Tables detected automatically using ruling lines; table cells excluded from body text stream
 - Headings detected by font size relative to the dominant body font size
 - Page separators inserted as `---` with `<!-- Page N -->` comments
+- **Scanned pages** (no embedded text) are automatically OCR'd via Tesseract — no extra code needed
+
+#### OCR parameters
+
+| Parameter | Default | Description |
+| --- | --- | --- |
+| `ocr_lang` | `"eng"` | Tesseract language code(s). Use `"fra"` for French, `"eng+fra"` for mixed. |
+| `tessdata_dir` | `None` | Path to a custom `tessdata` folder. Point this at `tessdata_best` for higher accuracy. |
+
+```python
+import mdextract
+
+# Standard English OCR (default)
+text = mdextract.parse_file("scan.pdf")
+
+# French OCR — standard models
+text = mdextract.parse_file("rapport.pdf", ocr_lang="fra")
+
+# French OCR — high-accuracy models (tessdata_best)
+BEST = r"C:\Program Files\Tesseract-OCR\tessdata_best"
+text = mdextract.parse_file("rapport.pdf", ocr_lang="fra", tessdata_dir=BEST)
+```
+
+See [OCR Setup](#ocr-setup-scanned-pdfs) below for installation instructions.
 
 ### DOCX
 - Heading levels mapped from Word's built-in styles (`Heading 1` → `#`, `Title` → `#`, etc.)
@@ -180,6 +212,89 @@ except ValueError as e:
 
 ---
 
+## OCR Setup (Scanned PDFs)
+
+For PDFs that contain scanned images instead of embedded text, mdextract automatically falls back to Tesseract OCR. Two extra packages and a Tesseract installation are required.
+
+### 1 — Install Tesseract
+
+**Windows:**
+Download and run the UB Mannheim installer:
+https://github.com/UB-Mannheim/tesseract/wiki
+
+Default install path: `C:\Program Files\Tesseract-OCR\tesseract.exe`
+
+**macOS:**
+```bash
+brew install tesseract
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install tesseract-ocr
+```
+
+### 2 — Install Python OCR dependencies
+
+```bash
+pip install pymupdf pytesseract
+```
+
+Or with extras (if published with OCR extras):
+```bash
+pip install "mdextract[ocr]"
+```
+
+### 3 — Download language models
+
+**Standard models** (faster, smaller — ~5 MB each):
+
+```powershell
+# Windows — save to Tesseract's tessdata folder
+$dir = "C:\Program Files\Tesseract-OCR\tessdata"
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/fra.traineddata" -OutFile "$dir\fra.traineddata"
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata" -OutFile "$dir\eng.traineddata"
+```
+
+**Best models** (higher accuracy, larger — ~20 MB each):
+
+```powershell
+# Windows — save to a separate tessdata_best folder
+$best = "C:\Program Files\Tesseract-OCR\tessdata_best"
+New-Item -ItemType Directory -Path $best -Force
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata_best/raw/main/fra.traineddata" -OutFile "$best\fra.traineddata"
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata" -OutFile "$best\eng.traineddata"
+```
+
+All available languages: https://github.com/tesseract-ocr/tessdata_best
+
+### 4 — Verify
+
+```powershell
+& "C:\Program Files\Tesseract-OCR\tesseract.exe" --list-langs
+# Should include: eng, fra (and any others you downloaded)
+```
+
+### Using tessdata_best in code
+
+```python
+import mdextract
+
+BEST = r"C:\Program Files\Tesseract-OCR\tessdata_best"
+
+text = mdextract.parse_file(
+    "rapport.pdf",
+    ocr_lang="fra",          # language code
+    tessdata_dir=BEST,       # point at tessdata_best folder
+)
+```
+
+> **Note:** Every language you pass in `ocr_lang` must have a matching `.traineddata` file
+> in the `tessdata_dir` folder. For `ocr_lang="fra+eng"` you need both `fra.traineddata`
+> and `eng.traineddata`.
+
+---
+
 ## Requirements
 
 - Python ≥ 3.11
@@ -188,6 +303,11 @@ except ValueError as e:
 - [openpyxl](https://pypi.org/project/openpyxl/) — XLSX parsing
 
 CSV parsing uses the Python standard library only.
+
+**Optional (scanned PDF / OCR support):**
+- [pymupdf](https://pypi.org/project/pymupdf/) — PDF page rendering to image
+- [pytesseract](https://pypi.org/project/pytesseract/) — Tesseract OCR wrapper
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) ≥ 5 installed on the system
 
 ---
 

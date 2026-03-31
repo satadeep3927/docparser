@@ -4,16 +4,91 @@ from collections import defaultdict
 LINE_Y_TOLERANCE = 3
 PARA_GAP_FACTOR = 1.4
 
+# Minimum number of characters on a page before we consider it
+# "has text" and skip OCR.
+_MIN_CHARS_FOR_TEXT_PAGE = 20
 
-def parse_pdf(file_path: str) -> str:
-    """Convert a PDF file to Markdown with heading detection and table support."""
+
+def parse_pdf(
+    file_path: str,
+    ocr_lang: str = "eng",
+    tessdata_dir: str | None = None,
+) -> str:
+    """Convert a PDF file to Markdown with heading detection and table support.
+
+    Scanned pages (no embedded text) are automatically processed with OCR
+    via Tesseract. Requires Tesseract to be installed on the system.
+
+    Args:
+        file_path:    Path to the PDF file.
+        ocr_lang:     Tesseract language code(s) for scanned pages.
+                      Single language:  ``"fra"`` (French), ``"eng"`` (English)
+                      Multiple languages: ``"eng+fra"`` (English + French)
+                      Defaults to ``"eng"``.
+        tessdata_dir: Path to a custom ``tessdata`` directory, e.g.
+                      ``r"C:\\Program Files\\Tesseract-OCR\\tessdata_best"``.
+                      When ``None`` (default) Tesseract uses its built-in
+                      ``tessdata`` folder (standard models).
+    """
     md_pages = []
     with pdfplumber.open(file_path) as pdf:
         for page_num, page in enumerate(pdf.pages, start=1):
-            page_md = _process_page(page)
+            if len(page.chars) >= _MIN_CHARS_FOR_TEXT_PAGE:
+                # Normal text-based page
+                page_md = _process_page(page)
+            else:
+                # Scanned / image-only page — fall back to OCR
+                page_md = _ocr_page(
+                    file_path, page_num - 1,
+                    lang=ocr_lang,
+                    tessdata_dir=tessdata_dir,
+                )
+
             if page_md.strip():
                 md_pages.append(f"<!-- Page {page_num} -->\n\n{page_md}")
     return "\n\n---\n\n".join(md_pages)
+
+
+# ---------------------------------------------------------------------------
+# OCR fallback
+# ---------------------------------------------------------------------------
+
+def _ocr_page(
+    file_path: str,
+    page_index: int,
+    lang: str = "eng",
+    tessdata_dir: str | None = None,
+) -> str:
+    """Render a PDF page to an image and extract text via Tesseract OCR.
+
+    Args:
+        file_path:    Path to the source PDF.
+        page_index:   Zero-based page index.
+        lang:         Tesseract language string, e.g. ``"fra"``, ``"eng+fra"``.
+        tessdata_dir: Optional path to a custom tessdata directory.
+    """
+    try:
+        import fitz  # pymupdf
+        import pytesseract
+        from PIL import Image
+        import io
+
+        doc = fitz.open(file_path)
+        page = doc[page_index]
+        # Render at 2x resolution for better OCR accuracy
+        mat = fitz.Matrix(2, 2)
+        pix = page.get_pixmap(matrix=mat)
+        img = Image.open(io.BytesIO(pix.tobytes("png")))
+
+        config = ""
+        if tessdata_dir:
+            # Wrap in quotes to handle paths with spaces
+            config = f'--tessdata-dir "{tessdata_dir}"'
+
+        text = pytesseract.image_to_string(img, lang=lang, config=config)
+        return text.strip()
+    except Exception as e:
+        return f"<!-- OCR failed for this page: {e} -->"
 
 
 # ---------------------------------------------------------------------------

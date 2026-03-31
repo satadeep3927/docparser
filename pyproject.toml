@@ -1,6 +1,6 @@
 [project]
 name = "mdextract"
-version = "0.1.0"
+version = "1.0.0"
 description = "Universal document parser — converts PDF, DOCX, XLSX, CSV to Markdown strings for AI pipelines"
 readme = "README.md"
 license = { text = "MIT" }
@@ -22,10 +22,13 @@ classifiers = [
 dependencies = [
     "openpyxl>=3.1.5",
     "pdfplumber>=0.7",
+    "pymupdf>=1.27.2.2",
+    "pytesseract>=0.3.13",
     "python-docx>=1.2.0",
 ]
 
 [project.optional-dependencies]
+ocr = ["pytesseract>=0.3", "pymupdf>=1.23"]
 dev = ["pytest", "pytest-cov"]
 
 [project.urls]
